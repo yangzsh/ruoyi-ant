@@ -114,7 +114,7 @@ export default {
       form: this.$form.createForm(this),
       permissions: [],
       treeCheck: false,
-      pidSet: null,
+      pidSet: [],
       checkedKeys: [],
       halfCheckedKeys: []
     }
@@ -125,17 +125,22 @@ export default {
   methods: {
     add () {
       this.form.resetFields()
+      this.checkedKeys = []
+      this.pidSet = []
       this.edit({ })
     },
     edit (record) {
-      getRolePermIds(record.roleId).then(res => {
-        const pidSet = new Set(res.map(m => m.parentId).filter(id => id > 0))
-        this.pidSet = pidSet
-        // 因为antd 树插件勾选父节点会导致所有子节点选中,所以过滤所有父节点
-        this.checkedKeys = res.map(m => m.menuId).filter(id => !pidSet.has(id))
-        this.treeCheck = false
-      })
+      if (record.roleId) {
+        getRolePermIds(record.roleId).then(res => {
+          const pidSet = new Set(res.map(m => m.parentId).filter(id => id > 0))
+          this.pidSet = pidSet
+          // 因为antd 树插件勾选父节点会导致所有子节点选中,所以过滤所有父节点
+          this.checkedKeys = res.map(m => m.menuId).filter(id => !pidSet.has(id))
+        })
+      }
       this.mdl = Object.assign({}, record)
+      // 如果没有check过，半选节点是拿不到的，只能通过预先设置的pidSet获取
+      this.treeCheck = false
       this.visible = true
       this.$nextTick(() => {
         this.form.setFieldsValue(pick(this.mdl, 'roleId', 'roleName', 'status', 'roleSort', 'roleKey'))
